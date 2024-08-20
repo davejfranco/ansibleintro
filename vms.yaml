@@ -64,7 +64,7 @@
 
           [all]
           {{ vm_name }}
-        mode: "0755"
+        mode: "0420"
       tags: start
 
     - name: Stop Multipass VM
