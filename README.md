@@ -36,7 +36,7 @@ make stop
 
 ## Capitulos
 
-- [1. Introducción](./intro/intro.md)
-- [2. Instalación de Multipass](#2.-instalación-de-multipass)
+- [1. Introducción](./capitulos/1-intro.md)
+- [2. Playbooks](./capitulos/2-playbooks.md)
 
 
