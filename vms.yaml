@@ -1,0 +1,77 @@
+---
+- name: Lab VMs
+  hosts: localhost
+  connection: local
+ 
+  vars:
+    vm_name: demo
+
+  tasks:
+    - name: Start Multipass VM
+      theko2fi.multipass.multipass_vm:
+        name: "{{ vm_name }}"
+        cpus: 1
+        memory: 2G
+        disk: 8G
+        state: present
+      register: vm
+      tags: start
+
+    - name: Create .ssh directory
+      ansible.builtin.file:
+        path: .ssh
+        state: directory
+        mode: "0755"
+      tags: start
+
+    - name: Generate ssh keys
+      community.crypto.openssh_keypair:
+        path: .ssh/id_rsa
+      register: ssh
+      tags: start
+
+    - name: Copy ssh keys to VM
+      theko2fi.multipass.multipass_vm_transfer_into:
+        name: "{{ vm_name }}"
+        src: .ssh/id_rsa.pub
+        dest: /tmp/id_rsa.pub
+      tags: start
+
+    - name: Add ssh keys to Ubuntu user
+      theko2fi.multipass.multipass_vm_exec:
+        name: "{{ vm_name }}"
+        command: /bin/bash -c "cat /tmp/id_rsa.pub >> ~/.ssh/authorized_keys"
+      tags: start
+
+    #- name: Print VM details
+    #  ansible.builtin.debug:
+    #    var: vm
+    #  tags: start 
+    
+    - name: Get VM facts
+      ansible.builtin.set_fact:
+        vm_ip: "{{ vm.result.info[vm_name].ipv4[0] }}"
+      tags: start
+
+    - name: Update ansible inventory
+      ansible.builtin.copy:
+        dest: ./demo.ini
+        content: |
+          [{{ vm_name }}]
+          ansible_host={{ vm_ip }}
+          ansible_user=ubuntu
+          ansible_ssh_private_key_file=.ssh/id_rsa
+
+          [all]
+          {{ vm_name }}
+        mode: "0755"
+      tags: start
+
+    - name: Stop Multipass VM
+      theko2fi.multipass.multipass_vm:
+        name: "{{ vm_name }}"
+        state: absent
+        purge: true
+      tags: stop
+
+  
