@@ -58,7 +58,7 @@
         dest: ./inventory.ini
         content: |
           [lab]
-          demo ansible_host={{ vm_ip }}
+          {{ vm_ip }}
 
           [all:vars]
           ansible_user=ubuntu
