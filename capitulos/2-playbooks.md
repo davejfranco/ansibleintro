@@ -46,7 +46,7 @@ ansible-playbook hello.yaml
 
 Hemos agregado "become" este argumento, es el equivalente a decir `sudo apt update`. Puede agregarse por tarea o en el playbook.
 
-Instalar un paquete
+### Instalar un paquete
 
 ```yaml
 ---
