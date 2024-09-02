@@ -1,0 +1,117 @@
+---
+- name: Wordpress Install
+  hosts: lab 
+  become: true
+
+  tasks:
+  
+    - name: Update Packages
+      ansible.builtin.apt:
+        update_cache: yes
+        upgrade: dist 
+
+    - name: Install Apache2
+      ansible.builtin.apt:
+        name: apache2
+        state: present 
+
+    - name: Start Apache service
+      ansible.builtin.systemd_service:
+        name: apache2 
+        state: started
+        enabled: true
+
+    - name: Install php and dependencies
+      ansible.builtin.apt:
+        name: "{{ item }}"
+        state: present 
+      loop:
+        - php 
+        - php-common
+        - php-mysql
+        - php-xml
+        - php-xmlrpc
+        - php-curl
+        - php-gd
+        - php-imagick
+        - php-cli
+        - php-dev
+        - php-dev
+        - php-imap
+        - php-mbstring
+        - php-opcache
+        - php-soap
+        - php-zip
+        - php-intl
+    
+    - name: Install MariaDB
+      ansible.builtin.apt:
+        name:
+          - mariadb-server
+          - mariadb-client
+        state: present
+
+    - name: Start MariaDB service
+      ansible.builtin.systemd_service:
+        name: mariadb 
+        state: started
+        enabled: true
+
+    - name: Python dependencies
+      ansible.builtin.apt:
+        name:
+          - python3-pip
+          - python3-dev
+          - libmysqlclient-dev
+        state: present
+    
+    - name: Ignore PEP 668 because it's silly.
+      ansible.builtin.file:
+        path: /usr/lib/python3.12/EXTERNALLY-MANAGED
+        state: absent
+
+    - name: Install mysqlclient via Pip 
+      ansible.builtin.pip:
+        name: mysqlclient 
+        state: present
+
+    - name: Set MariaDB root password
+      community.mysql.mysql_user:
+        name: root
+        host: localhost
+        password: "mypassword"
+        login_user: root
+        login_password: ""
+        priv: "*.*:ALL,GRANT"
+        state: present
+
+    - name: Remove anonymous MariaDB users
+      community.mysql.mysql_user:
+        name: ""
+        host_all: yes
+        login_user: root
+        login_password: "mypassword"
+        state: absent
+
+    - name: Disallow root login remotely
+      community.mysql.mysql_user:
+        name: root
+        host: "{{ item }}"
+        login_user: root
+        login_password: "mypassword"
+        state: absent
+      loop:
+        - "{{ ansible_hostname }}"
+        - '::1'
+        - '127.0.0.1'
+        - '%'
+
+    - name: Remove test database
+      community.mysql.mysql_db:
+        name: test
+        state: absent
+        login_user: root
+        login_password: "mypassword"
+
+    - name: Reload privilege tables
+      ansible.builtin.command: mysql -u root -p"mypassword" -e "FLUSH PRIVILEGES;"
