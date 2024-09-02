@@ -43,11 +43,6 @@
         command: /bin/bash -c "cat /tmp/id_rsa.pub >> ~/.ssh/authorized_keys"
       tags: start
 
-    #- name: Print VM details
-    #  ansible.builtin.debug:
-    #    var: vm
-    #  tags: start 
-    
     - name: Get VM facts
       ansible.builtin.set_fact:
         vm_ip: "{{ vm.result.info[vm_name].ipv4[0] }}"
