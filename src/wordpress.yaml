@@ -2,7 +2,8 @@
 - name: Wordpress Install
   hosts: lab 
   become: true
-
+  gather_facts: true
+  
   tasks:
   
     - name: Update Packages
@@ -84,7 +85,8 @@
         login_password: ""
         priv: "*.*:ALL,GRANT"
         state: present
-
+      ignore_errors: true
+    
     - name: Remove anonymous MariaDB users
       community.mysql.mysql_user:
         name: ""
@@ -115,3 +117,84 @@
 
     - name: Reload privilege tables
       ansible.builtin.command: mysql -u root -p"mypassword" -e "FLUSH PRIVILEGES;"
+
+    - name: Remove test database
+      community.mysql.mysql_db:
+        name: wordpress_db
+        state: present
+        login_user: root
+        login_password: "mypassword"
+    
+    - name: Set wordpress user and password
+      community.mysql.mysql_user:
+        name: wordpress
+        host: localhost
+        password: "mypassword"
+        login_user: root
+        login_password: "mypassword"
+        priv: "wordpress_db.*:ALL,GRANT"
+        state: present
+
+    - name: Download wordpress
+      ansible.builtin.get_url:
+        url: https://wordpress.org/wordpress-6.6.1.tar.gz
+        dest: /tmp
+
+    - name: Extract wordpress 
+      ansible.builtin.unarchive:
+        src: /tmp/wordpress-6.6.1.tar.gz
+        dest: /var/www/html
+        remote_src: true
+
+    - name: Generate new wp-config 
+      ansible.builtin.copy:
+        remote_src: true
+        src: /var/www/html/wordpress/wp-config-sample.php 
+        dest: /var/www/html/wordpress/wp-config.php 
+
+    - name: Change wordpress permission 
+      ansible.builtin.file:
+        path: /var/www/html
+        state: directory
+        recurse: yes
+        owner: www-data
+        group: www-data
+        mode: '0755'
+
+    - name: Configure wp-config.php
+      ansible.builtin.lineinfile:
+        path: /var/www/html/wordpress/wp-config.php
+        regexp: "{{ item.regexp }}"
+        line: "{{ item.line }}"
+      loop:
+        - { regexp: "database_name_here", line: "define('DB_NAME', 'wordpress_db');" }
+        - { regexp: "username_here", line: "define('DB_USER', 'wordpress');" }
+        - { regexp: "password_here", line: "define('DB_PASSWORD', 'mypassword');" }
+
+    - name: Add wordpress secret key generator
+      ansible.builtin.shell: |
+        curl -s https://api.wordpress.org/secret-key/1.1/salt/ >> /var/www/html/wordpress/wp-config.php
+
+    - name: Generate Wordpress apache conf 
+      ansible.builtin.copy:
+        remote_src: true
+        src: /etc/apache2/sites-available/000-default.conf 
+        dest: /etc/apache2/sites-available/wordpress.conf 
+
+    - name: Add wordpress DocumentRoot 
+      ansible.builtin.lineinfile:
+        path: /etc/apache2/sites-available/wordpress.conf 
+        regexp: "/var/www/html"
+        line: "        DocumentRoot /var/www/html/wordpress"
+  
+    - name: Enable wordpress site 
+      ansible.builtin.shell: |
+        a2ensite wordpress.conf
+        a2dissite 000-default.conf
+      args:
+        chdir: /etc/apache2/sites-available
+
+    - name: Restart Apache2 service 
+      ansible.builtin.systemd_service:
+        name: apache2 
+        state: restarted
