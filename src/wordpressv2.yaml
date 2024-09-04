@@ -1,0 +1,13 @@
+---
+- name: Wordpress Install V2
+  hosts: demo
+  become: True
+
+  roles:
+    - role: wordpress
+      vars:
+        mysql_root_password: mypassword
+        wordpress_user: wordpress_user
+        wordpress_db_name: wp-db
+        wordpress_password: mywppassword
+    
