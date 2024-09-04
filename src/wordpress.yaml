@@ -1,8 +1,14 @@
 ---
 - name: Wordpress Install
-  hosts: lab 
+  hosts: demo 
   become: true
   gather_facts: true
+  
+  vars:
+    mysql_root_password: mypassword 
+    wordpress_user: wordpress
+    wordpress_password: mywordpress_pass
+    wordpress_db_name: wp_db
   
   tasks:
   
@@ -58,29 +64,13 @@
         state: started
         enabled: true
 
-    - name: Python dependencies
-      ansible.builtin.apt:
-        name:
-          - python3-pip
-          - python3-dev
-          - libmysqlclient-dev
-        state: present
-    
-    - name: Ignore PEP 668 because it's silly.
-      ansible.builtin.file:
-        path: /usr/lib/python3.12/EXTERNALLY-MANAGED
-        state: absent
-
-    - name: Install mysqlclient via Pip 
-      ansible.builtin.pip:
-        name: mysqlclient 
-        state: present
+    - import_tasks: python.yaml
 
     - name: Set MariaDB root password
       community.mysql.mysql_user:
         name: root
         host: localhost
-        password: "mypassword"
+        password: "{{ mysql_root_password }}"
         login_user: root
         login_password: ""
         priv: "*.*:ALL,GRANT"
@@ -92,7 +82,7 @@
         name: ""
         host_all: yes
         login_user: root
-        login_password: "mypassword"
+        login_password: "{{ mysql_root_password }}"
         state: absent
 
     - name: Disallow root login remotely
@@ -100,7 +90,7 @@
         name: root
         host: "{{ item }}"
         login_user: root
-        login_password: "mypassword"
+        login_password: "{{ mysql_root_password }}"
         state: absent
       loop:
         - "{{ ansible_hostname }}"
@@ -113,26 +103,26 @@
         name: test
         state: absent
         login_user: root
-        login_password: "mypassword"
+        login_password: "{{ mysql_root_password }}"
 
     - name: Reload privilege tables
-      ansible.builtin.command: mysql -u root -p"mypassword" -e "FLUSH PRIVILEGES;"
+      ansible.builtin.command: mysql -u root -p"{{ mysql_root_password }}" -e "FLUSH PRIVILEGES;"
 
-    - name: Remove test database
+    - name: Add wordpress database
       community.mysql.mysql_db:
-        name: wordpress_db
+        name: "{{ wordpress_db_name }}"
         state: present
         login_user: root
-        login_password: "mypassword"
+        login_password: "{{ mysql_root_password }}"
     
     - name: Set wordpress user and password
       community.mysql.mysql_user:
-        name: wordpress
+        name: "{{ wordpress_user }}"
         host: localhost
-        password: "mypassword"
+        password: "{{ wordpress_password }}"
         login_user: root
-        login_password: "mypassword"
-        priv: "wordpress_db.*:ALL,GRANT"
+        login_password: "{{ mysql_root_password }}"
+        priv: "{{ wordpress_db_name }}.*:ALL,GRANT"
         state: present
 
     - name: Download wordpress
@@ -167,9 +157,9 @@
         regexp: "{{ item.regexp }}"
         line: "{{ item.line }}"
       loop:
-        - { regexp: "database_name_here", line: "define('DB_NAME', 'wordpress_db');" }
-        - { regexp: "username_here", line: "define('DB_USER', 'wordpress');" }
-        - { regexp: "password_here", line: "define('DB_PASSWORD', 'mypassword');" }
+        - { regexp: "database_name_here", line: "define('DB_NAME', '{{ wordpress_db_name }}');" }
+        - { regexp: "username_here", line: "define('DB_USER', '{{ wordpress_user }}');" }
+        - { regexp: "password_here", line: "define('DB_PASSWORD', '{{ wordpress_password }}');" }
 
     - name: Add wordpress secret key generator
       ansible.builtin.shell: |
