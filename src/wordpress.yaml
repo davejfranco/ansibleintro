@@ -4,12 +4,15 @@
   become: true
   gather_facts: true
   
-  vars:
-    mysql_root_password: mypassword 
-    wordpress_user: wordpress
-    wordpress_password: mywordpress_pass
-    wordpress_db_name: wp_db
-  
+  #  vars:
+  #    mysql_root_password: mypassword 
+  #    wordpress_user: wordpress
+  #    wordpress_password: mywordpress_pass
+  #    wordpress_db_name: wp_db
+
+  vars_files:
+    - variables.yaml
+
   tasks:
   
     - name: Update Packages
@@ -156,6 +159,7 @@
         path: /var/www/html/wordpress/wp-config.php
         regexp: "{{ item.regexp }}"
         line: "{{ item.line }}"
+      no_log: True
       loop:
         - { regexp: "database_name_here", line: "define('DB_NAME', '{{ wordpress_db_name }}');" }
         - { regexp: "username_here", line: "define('DB_USER', '{{ wordpress_user }}');" }
