@@ -1,0 +1,4 @@
+mariadb_root_password: CHANGEME
+wordpress_user: wordpress 
+wordpress_password: CHANGEME 
+wordpress_db_name: wordpress_db
