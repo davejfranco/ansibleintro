@@ -1,0 +1,53 @@
+- name: Install MariaDB
+  ansible.builtin.apt:
+    name:
+      - mariadb-server
+      - mariadb-client
+    state: present
+  notify: Start MariaDB
+
+- name: Ensure Python Dependencies
+  ansible.builtin.import_tasks: python.yaml
+
+- name: Set MariaDB root password
+  community.mysql.mysql_user:
+    name: root
+    host: localhost
+    password: "{{ new_root_password }}"
+    login_user: root
+    login_password: ""
+    priv: "*.*:ALL,GRANT"
+    state: present
+  ignore_errors: true
+
+- name: Remove anonymous MariaDB users
+  community.mysql.mysql_user:
+    name: ""
+    host_all: yes
+    login_user: root
+    login_password: "{{ new_root_password }}"
+    state: absent
+
+- name: Disallow root login remotely
+  community.mysql.mysql_user:
+    name: root
+    host: "{{ item }}"
+    login_user: root
+    login_password: "{{ new_root_password }}"
+    state: absent
+  loop:
+    - "{{ ansible_hostname }}"
+    - '::1'
+    - '127.0.0.1'
+    - '%'
+
+- name: Remove test database
+  community.mysql.mysql_db:
+    name: test
+    state: absent
+    login_user: root
+    login_password: "{{ new_root_password }}"
+
+- name: Reload privilege tables
+  ansible.builtin.command: mysql -u root -p"{{ new_root_password }}" -e "FLUSH PRIVILEGES;"
+

@@ -1,0 +1,27 @@
+- name: Get Python version 
+  ansible.builtin.command: python3 --version 
+  register: python_version
+
+- name: Extract Python version number
+  set_fact:
+    python_major_version: "{{ python_version.stdout.split()[1].split('.')[0] }}"
+    python_minor_version: "{{ python_version.stdout.split()[1].split('.')[1] }}"
+
+- name: Python dependencies
+  ansible.builtin.apt:
+    name:
+    - pkg-config
+    - python3-pip
+    - python3-dev
+    - libmysqlclient-dev
+    state: present
+
+- name: Ignore PEP 668 because it's silly.
+  ansible.builtin.file:
+    path: /usr/lib/python3.12/EXTERNALLY-MANAGED
+    state: absent
+
+- name: Install mysqlclient via Pip 
+  ansible.builtin.pip:
+    name: mysqlclient 
+    state: present

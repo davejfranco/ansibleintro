@@ -1,0 +1,6 @@
+- name: Start MariaDB
+  ansible.builtin.systemd_service:
+    name: mariadb 
+    state: started
+    enabled: true
+
