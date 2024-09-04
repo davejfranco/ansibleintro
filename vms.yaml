@@ -52,7 +52,7 @@
       ansible.builtin.copy:
         dest: ./inventory.ini
         content: |
-          [lab]
+          [demo]
           {{ vm_ip }}
 
           [all:vars]
