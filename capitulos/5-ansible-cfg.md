@@ -9,6 +9,7 @@ ansible-config init --disabled > ansible.cfg
 ```
 
 Estos son las opciones que me gustan tener bajo el archivo de configuración de ansible:
+
 ```bash
 [defaults]
 roles_path = roles/

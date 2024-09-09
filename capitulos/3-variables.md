@@ -18,9 +18,11 @@ all:
 
   vars:
     user: DaveOps 
+  
   tasks:
     - name: Hello World
-      ansible.builtin.shell: "echo Hello World! {{ user }}"
+      ansible.builtin.debug: 
+        msg: "Hello World! {{ user }}"
 ```
 
 ### En linea de comandos
