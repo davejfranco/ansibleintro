@@ -46,3 +46,8 @@ make stop
 
 - [1. Introducción](./capitulos/1-intro.md)
 - [2. Playbooks](./capitulos/2-playbooks.md)
+- [3. Variables](./capitulos/3-variables.md)
+- [4. Inventory](./capitulos/4-inventory.md)
+- [5. Ansible config](./capitulos/5-ansible-cfg.md)
+- [6. Wordpress playbook](./capitulos/6-wordpress-playbook.md)
+- [7. Wordpress roles](./capitulos/7-wordpress-roles.md)
